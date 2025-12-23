@@ -230,7 +230,7 @@ refresh_token = "..."
 
 ## AI Agent Integration
 
-This CLI follows the [Agent Skills](https://agentskills.io/) standard — it works with Claude Code, Cursor, and other compatible AI agents. See [`SKILL.md`](SKILL.md) for the skill definition.
+This CLI is available as an [Agent Skill](https://agentskills.io/) — it works with Claude Code, Cursor, and other compatible AI agents. See [`SKILL.md`](SKILL.md) for the skill definition.
 
 ### Install Agent Skill
 
