@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import sys
 from typing import Annotated
 
@@ -21,6 +22,9 @@ from strava_cli.commands import (
     upload,
 )
 from strava_cli.output import OutputFormat
+
+# Suppress stravalib's noisy token warnings - we handle auth ourselves
+logging.getLogger("root").setLevel(logging.ERROR)
 
 # Exit codes
 EXIT_SUCCESS = 0
