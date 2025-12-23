@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: strava-macos-arm64
+          - os: macos-13
+            artifact: strava-macos-x64
+          - os: ubuntu-latest
+            artifact: strava-linux-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set version
+        run: make set-version VERSION=${{ inputs.version }}
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Build binary
+        run: make build
+
+      - name: Rename binary
+        run: mv dist/strava dist/${{ matrix.artifact }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          for dir in artifacts/*/; do
+            name=$(basename "$dir")
+            cp "$dir$name" "release/$name"
+            chmod +x "release/$name"
+          done
+          ls -la release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: strava-cli v${{ inputs.version }}
+          body: |
+            ## strava-cli v${{ inputs.version }}
+
+            Strava from your terminal. Pipe it, script it, automate it.
+
+            ### Installation
+
+            Download the binary for your platform:
+
+            ```bash
+            # macOS (Apple Silicon)
+            curl -L https://github.com/eddmann/strava-cli/releases/download/v${{ inputs.version }}/strava-macos-arm64 -o strava
+            chmod +x strava
+            sudo mv strava /usr/local/bin/
+
+            # macOS (Intel)
+            curl -L https://github.com/eddmann/strava-cli/releases/download/v${{ inputs.version }}/strava-macos-x64 -o strava
+            chmod +x strava
+            sudo mv strava /usr/local/bin/
+
+            # Linux (x64)
+            curl -L https://github.com/eddmann/strava-cli/releases/download/v${{ inputs.version }}/strava-linux-x64 -o strava
+            chmod +x strava
+            sudo mv strava /usr/local/bin/
+            ```
+
+            ### Features
+
+            - Access Strava data from your terminal
+            - Machine-readable output (JSON, JSONL, CSV, TSV)
+            - Human-friendly table output
+            - OAuth authentication with automatic token refresh
+            - Multiple profile support
+            - Activity management, athlete stats, segments, routes, clubs, gear
+
+            ### Requirements
+
+            - Strava API credentials (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`)
+            - Run `strava auth login` to authenticate
+          files: release/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
