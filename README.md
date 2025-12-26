@@ -23,6 +23,12 @@ curl -fsSL https://raw.githubusercontent.com/eddmann/strava-cli/main/install.sh 
 
 Downloads the pre-built binary for your platform (macOS/Linux) to `~/.local/bin`.
 
+### Homebrew
+
+```bash
+brew install eddmann/tap/strava-cli
+```
+
 ### Using uv/pipx
 
 Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
