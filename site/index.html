@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Primary Meta Tags -->
+    <title>Strava CLI - Strava From Your Terminal | Command Line Tool</title>
+    <meta name="title" content="Strava CLI - Strava From Your Terminal | Command Line Tool">
+    <meta name="description" content="Access your Strava fitness data from the command line. Activities, segments, routes, clubs, and gear. Pipe it, script it, automate it.">
+    <meta name="keywords" content="Strava CLI, Strava terminal, fitness data, command line, activities, cycling, running, Strava API, fitness automation, workout data">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Edd Mann">
+    <meta name="theme-color" content="#f97316">
+    <meta name="color-scheme" content="light dark">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://eddmann.com/strava-cli/">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://eddmann.com/strava-cli/">
+    <meta property="og:title" content="Strava CLI - Strava From Your Terminal">
+    <meta property="og:description" content="Access your Strava fitness data from the command line. Activities, segments, routes, clubs, and gear. Pipe it, script it, automate it.">
+    <meta property="og:image" content="https://eddmann.com/strava-cli/preview.png">
+    <meta property="og:site_name" content="Strava CLI">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://eddmann.com/strava-cli/">
+    <meta property="twitter:title" content="Strava CLI - Strava From Your Terminal">
+    <meta property="twitter:description" content="Access your Strava fitness data from the command line. Activities, segments, routes, clubs, and gear. Pipe it, script it, automate it.">
+    <meta property="twitter:image" content="https://eddmann.com/strava-cli/preview.png">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Strava CLI",
+        "operatingSystem": "macOS, Linux",
+        "applicationCategory": "DeveloperApplication",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "description": "Access your Strava fitness data from the command line. Activities, segments, routes, clubs, and gear. Pipe it, script it, automate it.",
+        "downloadUrl": "https://github.com/eddmann/strava-cli/releases/latest",
+        "softwareVersion": "1.0.0",
+        "author": {
+            "@type": "Person",
+            "name": "Edd Mann"
+        },
+        "image": "https://eddmann.com/strava-cli/logo.png"
+    }
+    </script>
+
+    <!-- Theme flash prevention -->
+    <script>
+        if (localStorage.getItem('theme-preference') === 'dark' ||
+            (!localStorage.getItem('theme-preference') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['DM Sans', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'strava': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+
+    <style>
+        * { font-family: 'DM Sans', system-ui, sans-serif; }
+
+        html, body {
+            background: linear-gradient(180deg, #f8fafc 0%, #fff7ed 50%, #f1f5f9 100%);
+            min-height: 100vh;
+        }
+
+        html.dark, html.dark body {
+            background: linear-gradient(180deg, #0f172a 0%, #1c1008 50%, #0f172a 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        html.dark .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+        .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(249, 115, 22, 0.12), 0 8px 16px rgba(0, 0, 0, 0.04);
+            border-color: rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(249, 115, 22, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4);
+        }
+
+        .terminal {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(249, 115, 22, 0.1);
+        }
+        .terminal * {
+            font-family: 'JetBrains Mono', monospace !important;
+        }
+        .terminal-content {
+            min-height: 280px;
+        }
+        .terminal-line {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .terminal-line.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background: #f97316;
+            margin-left: 2px;
+            animation: cursor-blink 1s step-end infinite;
+        }
+        @keyframes cursor-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .install-tabs {
+            display: flex;
+            gap: 0;
+            background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+            border-radius: 20px 20px 0 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .install-tab {
+            flex: 1;
+            min-width: fit-content;
+            white-space: nowrap;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .install-tab:hover {
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .install-tab.active {
+            color: #e2e8f0;
+            background: rgba(249, 115, 22, 0.1);
+        }
+        .install-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #f97316;
+        }
+        .install-tab-content {
+            display: none;
+        }
+        .install-tab-content.active {
+            display: flex;
+        }
+        .terminal-header {
+            background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px 20px 0 0;
+        }
+        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        .feature-icon {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 16px;
+        }
+
+        .logo-glow {
+            filter: drop-shadow(0 0 20px rgba(249, 115, 22, 0.3));
+        }
+
+        /* Activity streak dots */
+        .activity-streak {
+            position: absolute;
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+        }
+        html.dark .activity-streak {
+            background: rgba(249, 115, 22, 0.15);
+        }
+        .streak-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+        .streak-active { background: #f97316; }
+        .streak-inactive { background: rgba(249, 115, 22, 0.2); }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-fade-in-up { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
+        .animate-spin-slow { animation: spin-slow 20s linear infinite; }
+        .opacity-0-initial { opacity: 0; }
+
+        .stagger-1 { animation-delay: 0.1s !important; }
+        .stagger-2 { animation-delay: 0.2s !important; }
+        .stagger-3 { animation-delay: 0.3s !important; }
+        .stagger-4 { animation-delay: 0.4s !important; }
+        .stagger-5 { animation-delay: 0.5s !important; }
+        .stagger-6 { animation-delay: 0.6s !important; }
+
+        .bg-pattern {
+            background-image: radial-gradient(rgba(249, 115, 22, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        html.dark .bg-pattern {
+            background-image: radial-gradient(rgba(249, 115, 22, 0.05) 1px, transparent 1px);
+        }
+
+        /* Segment badge */
+        .segment-badge {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #ea580c;
+        }
+        html.dark .segment-badge {
+            background: rgba(249, 115, 22, 0.15);
+            color: #fb923c;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .animate-float, .animate-fade-in-up, .animate-spin-slow, [class*="stagger-"] {
+                animation: none !important;
+            }
+            .opacity-0-initial { opacity: 1; }
+            .glass-card:hover { transform: none; }
+        }
+
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 dark:text-slate-200 antialiased overflow-x-hidden bg-pattern">
+    <!-- Dark Mode Toggle -->
+    <button class="js-theme-toggle fixed top-6 right-6 z-50 p-3 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg border border-gray-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300"
+        aria-label="Toggle dark mode">
+        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+    </button>
+
+    <!-- Hero Section with Terminal Demo -->
+    <section class="relative min-h-screen flex items-center justify-center px-6 py-20">
+        <div class="max-w-5xl mx-auto text-center">
+            <!-- Logo -->
+            <div class="mb-8 animate-fade-in-up stagger-1">
+                <div class="logo-glow inline-block animate-float relative">
+                    <div class="w-24 h-24 mx-auto bg-strava-500 rounded-[28%] flex items-center justify-center shadow-lg relative">
+                        <svg class="w-12 h-12 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Headline -->
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight animate-fade-in-up stagger-2 text-slate-900 dark:text-white">
+                <span class="gradient-text">Strava</span> From Your Terminal
+            </h1>
+
+            <!-- Tagline -->
+            <p class="text-xl md:text-2xl text-slate-500 dark:text-slate-400 mb-8 max-w-2xl mx-auto leading-relaxed animate-fade-in-up stagger-3 font-mono">
+                Pipe it, script it, automate it.
+            </p>
+
+            <!-- Terminal Demo -->
+            <div class="terminal max-w-3xl mx-auto mb-10 text-left animate-fade-in-up stagger-4">
+                <div class="terminal-header px-4 py-3 flex items-center gap-2">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                    <span class="ml-4 text-sm text-slate-400">strava-cli</span>
+                </div>
+                <div class="p-6 overflow-x-auto scrollbar-hide terminal-content" id="terminal-demo">
+                    <!-- Content populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 animate-fade-in-up stagger-5">
+                <a href="#installation" class="btn-primary px-8 py-4 text-lg font-semibold text-white inline-flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Install Now
+                </a>
+                <a href="https://github.com/eddmann/strava-cli" class="px-8 py-4 text-lg font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors inline-flex items-center gap-3 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-slate-300 dark:hover:border-slate-600 bg-white/50 dark:bg-slate-800/50 backdrop-blur">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    View on GitHub
+                </a>
+            </div>
+
+            <!-- Badge -->
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-slate-800/60 backdrop-blur border border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 animate-fade-in-up stagger-6">
+                <span class="w-2 h-2 bg-strava-500 rounded-full animate-pulse"></span>
+                <span class="font-medium text-strava-600 dark:text-strava-400">AI Agent Ready</span>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <span>Python 3.10+</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="relative px-6 py-24">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">Everything athletes and developers need</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">Powerful features for automation and analysis.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="glass-card p-8 opacity-0-initial stagger-1">
+                    <div class="feature-icon w-14 h-14 flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-strava-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900 dark:text-white">All Activity Data</h3>
+                    <p class="text-slate-500 dark:text-slate-400 leading-relaxed">Access activities, stats, segments, routes, clubs, and gear. Everything Strava has.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-card p-8 opacity-0-initial stagger-2">
+                    <div class="feature-icon w-14 h-14 flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-strava-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900 dark:text-white">Activity Streams</h3>
+                    <p class="text-slate-500 dark:text-slate-400 leading-relaxed">Time, distance, heartrate, power, cadence. Access the raw data behind your workouts.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-card p-8 opacity-0-initial stagger-3">
+                    <div class="feature-icon w-14 h-14 flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-strava-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900 dark:text-white">AI Agent Ready</h3>
+                    <p class="text-slate-500 dark:text-slate-400 leading-relaxed">Works with Claude, Cursor, and other AI assistants. Install the skill and let agents analyze your workouts.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass-card p-8 opacity-0-initial stagger-4">
+                    <div class="feature-icon w-14 h-14 flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-strava-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900 dark:text-white">Segment Explorer</h3>
+                    <p class="text-slate-500 dark:text-slate-400 leading-relaxed">Browse segments, view leaderboards, and track your KOMs.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="glass-card p-8 opacity-0-initial stagger-5">
+                    <div class="feature-icon w-14 h-14 flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-strava-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900 dark:text-white">Upload & Export</h3>
+                    <p class="text-slate-500 dark:text-slate-400 leading-relaxed">Upload FIT/GPX/TCX files. Export routes and activities to any format.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="glass-card p-8 opacity-0-initial stagger-6">
+                    <div class="feature-icon w-14 h-14 flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-strava-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900 dark:text-white">Script & Automate</h3>
+                    <p class="text-slate-500 dark:text-slate-400 leading-relaxed">Composable with jq, pipes, and Unix tools. JSON, CSV, or tables.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation" class="relative px-6 py-24">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">Get started in seconds</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-lg">Choose your preferred installation method.</p>
+            </div>
+
+            <div class="terminal opacity-0-initial stagger-1">
+                <!-- Tabs -->
+                <div class="install-tabs">
+                    <button class="install-tab active" data-tab="homebrew">Homebrew</button>
+                    <button class="install-tab" data-tab="script">Install Script</button>
+                    <button class="install-tab" data-tab="uv">uv tool</button>
+                    <button class="install-tab" data-tab="skill">Agent Skill</button>
+                </div>
+
+                <!-- Homebrew Content -->
+                <div class="install-tab-content active items-center py-4 pl-4 pr-2 md:pl-6 md:pr-4" data-tab-content="homebrew">
+                    <div class="relative flex-1 overflow-hidden">
+                        <div class="overflow-x-auto scrollbar-hide">
+                            <div class="flex items-center gap-2 md:gap-3 whitespace-nowrap pr-6">
+                                <span class="text-strava-400 font-medium">$</span>
+                                <code class="text-slate-200 text-sm md:text-lg">brew install eddmann/tap/strava-cli</code>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="js-copy-command ml-2 p-2 rounded-lg hover:bg-white/10 transition-colors group flex-shrink-0" data-command="brew install eddmann/tap/strava-cli" title="Copy to clipboard">
+                        <svg class="copy-icon w-5 h-5 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <svg class="check-icon w-5 h-5 text-strava-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Install Script Content -->
+                <div class="install-tab-content items-center py-4 pl-4 pr-2 md:pl-6 md:pr-4" data-tab-content="script">
+                    <div class="relative flex-1 overflow-hidden">
+                        <div class="overflow-x-auto scrollbar-hide">
+                            <div class="flex items-center gap-2 md:gap-3 whitespace-nowrap pr-6">
+                                <span class="text-strava-400 font-medium">$</span>
+                                <code class="text-slate-200 text-sm md:text-base">curl -fsSL https://raw.githubusercontent.com/eddmann/strava-cli/main/install.sh | sh</code>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="js-copy-command ml-2 p-2 rounded-lg hover:bg-white/10 transition-colors group flex-shrink-0" data-command="curl -fsSL https://raw.githubusercontent.com/eddmann/strava-cli/main/install.sh | sh" title="Copy to clipboard">
+                        <svg class="copy-icon w-5 h-5 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <svg class="check-icon w-5 h-5 text-strava-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- uv tool Content -->
+                <div class="install-tab-content items-center py-4 pl-4 pr-2 md:pl-6 md:pr-4" data-tab-content="uv">
+                    <div class="relative flex-1 overflow-hidden">
+                        <div class="overflow-x-auto scrollbar-hide">
+                            <div class="flex items-center gap-2 md:gap-3 whitespace-nowrap pr-6">
+                                <span class="text-strava-400 font-medium">$</span>
+                                <code class="text-slate-200 text-sm md:text-base">uv tool install git+https://github.com/eddmann/strava-cli.git</code>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="js-copy-command ml-2 p-2 rounded-lg hover:bg-white/10 transition-colors group flex-shrink-0" data-command="uv tool install git+https://github.com/eddmann/strava-cli.git" title="Copy to clipboard">
+                        <svg class="copy-icon w-5 h-5 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <svg class="check-icon w-5 h-5 text-strava-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Agent Skill Content -->
+                <div class="install-tab-content items-center py-4 pl-4 pr-2 md:pl-6 md:pr-4" data-tab-content="skill">
+                    <div class="relative flex-1 overflow-hidden">
+                        <div class="overflow-x-auto scrollbar-hide">
+                            <div class="flex items-center gap-2 md:gap-3 whitespace-nowrap pr-6">
+                                <span class="text-strava-400 font-medium">$</span>
+                                <code class="text-slate-200 text-sm md:text-base">curl -fsSL https://raw.githubusercontent.com/eddmann/strava-cli/main/install-skill.sh | sh</code>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="js-copy-command ml-2 p-2 rounded-lg hover:bg-white/10 transition-colors group flex-shrink-0" data-command="curl -fsSL https://raw.githubusercontent.com/eddmann/strava-cli/main/install-skill.sh | sh" title="Copy to clipboard">
+                        <svg class="copy-icon w-5 h-5 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <svg class="check-icon w-5 h-5 text-strava-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-center mt-8 text-slate-400">
+                Or download directly from
+                <a href="https://github.com/eddmann/strava-cli/releases" class="text-strava-500 hover:text-strava-600 underline underline-offset-4 transition-colors">GitHub Releases</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative px-6 py-16 border-t border-slate-200 dark:border-slate-800">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="mb-8 flex items-center justify-center gap-3">
+                <div class="w-10 h-10 bg-strava-500 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                    </svg>
+                </div>
+                <span class="text-2xl font-bold gradient-text">Strava CLI</span>
+            </div>
+
+            <div class="flex items-center justify-center gap-6 mb-8">
+                <a href="https://github.com/eddmann/strava-cli" class="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors inline-flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <a href="https://github.com/eddmann/strava-cli/releases" class="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Releases</a>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <a href="https://github.com/eddmann/strava-cli/issues" class="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Issues</a>
+            </div>
+
+            <p class="text-slate-400 text-sm">
+                Built by <a href="https://eddmann.com" class="text-strava-500 hover:text-strava-600 transition-colors">Edd Mann</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Copy to clipboard
+        document.querySelectorAll('.js-copy-command').forEach(button => {
+            button.addEventListener('click', () => {
+                const text = button.dataset.command;
+                navigator.clipboard.writeText(text);
+                const copyIcon = button.querySelector('.copy-icon');
+                const checkIcon = button.querySelector('.check-icon');
+                copyIcon.classList.add('hidden');
+                checkIcon.classList.remove('hidden');
+                setTimeout(() => {
+                    copyIcon.classList.remove('hidden');
+                    checkIcon.classList.add('hidden');
+                }, 2000);
+            });
+        });
+
+        // Installation tabs
+        document.querySelectorAll('.install-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                document.querySelectorAll('.install-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.install-tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelector(`[data-tab-content="${tabName}"]`).classList.add('active');
+            });
+        });
+
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.remove('opacity-0-initial');
+                    entry.target.classList.add('animate-fade-in-up');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.opacity-0-initial').forEach(el => observer.observe(el));
+
+        // Animated terminal demo
+        (function() {
+            const TYPING_SPEED = 40;
+            const OUTPUT_DELAY = 300;
+            const PAUSE_BETWEEN_DEMOS = 3000;
+
+            const terminalDemo = document.getElementById('terminal-demo');
+            const demos = [
+                {
+                    command: 'strava activities list -f human --limit 3',
+                    output: `<span class="text-slate-400">NAME             START DATE           DISTANCE</span>
+<span class="text-slate-200">Morning Ride</span>     <span class="text-slate-300">2024-12-29 07:15</span>     <span class="text-strava-300">45230.0</span>
+<span class="text-slate-200">Lunch Run</span>        <span class="text-slate-300">2024-12-28 12:00</span>     <span class="text-strava-300">8540.2</span>
+<span class="text-slate-200">Evening Swim</span>     <span class="text-slate-300">2024-12-27 18:30</span>     <span class="text-strava-300">2000.0</span>`
+                },
+                {
+                    command: 'strava athlete stats | jq .all_ride_totals.count',
+                    output: `<span class="text-yellow-400">342</span>`
+                },
+                {
+                    command: 'strava segments starred | jq .[0].name',
+                    output: `<span class="text-strava-300">"Box Hill"</span>`
+                },
+                {
+                    command: 'strava activities get 12345678 | jq .kudos_count',
+                    output: `<span class="text-yellow-400">42</span>`
+                }
+            ];
+
+            let currentDemo = 0;
+            let charIndex = 0;
+
+            function typeCommand() {
+                const demo = demos[currentDemo];
+                const commandEl = terminalDemo.querySelector('.command-text');
+
+                if (charIndex < demo.command.length) {
+                    commandEl.textContent = demo.command.substring(0, charIndex + 1);
+                    charIndex++;
+                    setTimeout(typeCommand, TYPING_SPEED);
+                } else {
+                    setTimeout(showOutput, OUTPUT_DELAY);
+                }
+            }
+
+            function showOutput() {
+                const demo = demos[currentDemo];
+                const outputEl = terminalDemo.querySelector('.output-content');
+                outputEl.innerHTML = demo.output;
+                outputEl.classList.add('visible');
+
+                setTimeout(nextDemo, PAUSE_BETWEEN_DEMOS);
+            }
+
+            function nextDemo() {
+                currentDemo = (currentDemo + 1) % demos.length;
+                charIndex = 0;
+                renderTerminal();
+            }
+
+            function renderTerminal() {
+                terminalDemo.innerHTML = `
+                    <div class="space-y-4 text-sm md:text-base">
+                        <div class="flex items-center">
+                            <span class="text-strava-400">$</span>
+                            <span class="text-slate-300 ml-2 command-text"></span><span class="cursor"></span>
+                        </div>
+                        <pre class="text-slate-400 text-xs md:text-sm leading-relaxed terminal-line output-content"></pre>
+                    </div>
+                `;
+                setTimeout(typeCommand, 500);
+            }
+
+            renderTerminal();
+        })();
+
+        // Theme toggle
+        (function() {
+            const STORAGE_KEY = 'theme-preference';
+
+            function getThemePreference() {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) return stored;
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            function setTheme(theme) {
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+            }
+
+            setTheme(getThemePreference());
+
+            document.querySelector('.js-theme-toggle').addEventListener('click', () => {
+                const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                const next = current === 'dark' ? 'light' : 'dark';
+                localStorage.setItem(STORAGE_KEY, next);
+                setTheme(next);
+            });
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem(STORAGE_KEY)) {
+                    setTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
