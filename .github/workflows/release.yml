@@ -2,11 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version number (e.g., 1.0.0)'
-        required: true
-        type: string
 
 jobs:
   build:
@@ -26,11 +21,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract version from changelog
+        id: version
+        run: |
+          VERSION=$(sed -n 's/^## \[\([^]]*\)\].*/\1/p' CHANGELOG.md | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v4
 
       - name: Set version
-        run: make set-version VERSION=${{ inputs.version }}
+        run: make set-version VERSION=${{ steps.version.outputs.version }}
 
       - name: Install dependencies
         run: make install
@@ -57,6 +58,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION=$(sed -n 's/^## \[\([^]]*\)\].*/\1/p' CHANGELOG.md | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          CONTENT=$(awk '
+            /^## \[/ {
+              if (found) exit
+              found=1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md)
+
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -75,47 +95,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.version }}
-          name: strava-cli v${{ inputs.version }}
-          body: |
-            ## strava-cli v${{ inputs.version }}
-
-            Strava from your terminal. Pipe it, script it, automate it.
-
-            ### Installation
-
-            Download the binary for your platform:
-
-            ```bash
-            # macOS (Apple Silicon)
-            curl -L https://github.com/eddmann/strava-cli/releases/download/v${{ inputs.version }}/strava-macos-arm64 -o strava
-            chmod +x strava
-            sudo mv strava /usr/local/bin/
-
-            # macOS (Intel)
-            curl -L https://github.com/eddmann/strava-cli/releases/download/v${{ inputs.version }}/strava-macos-x64 -o strava
-            chmod +x strava
-            sudo mv strava /usr/local/bin/
-
-            # Linux (x64)
-            curl -L https://github.com/eddmann/strava-cli/releases/download/v${{ inputs.version }}/strava-linux-x64 -o strava
-            chmod +x strava
-            sudo mv strava /usr/local/bin/
-            ```
-
-            ### Features
-
-            - Access Strava data from your terminal
-            - Machine-readable output (JSON, JSONL, CSV, TSV)
-            - Human-friendly table output
-            - OAuth authentication with automatic token refresh
-            - Multiple profile support
-            - Activity management, athlete stats, segments, routes, clubs, gear
-
-            ### Requirements
-
-            - Strava API credentials (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`)
-            - Run `strava auth login` to authenticate
+          tag_name: v${{ steps.changelog.outputs.version }}
+          name: strava-cli v${{ steps.changelog.outputs.version }}
+          body: ${{ steps.changelog.outputs.content }}
           files: release/*
           draft: false
           prerelease: false
@@ -133,7 +115,7 @@ jobs:
           cd homebrew-tap
 
           # Update version
-          sed -i "s/version \".*\"/version \"${{ inputs.version }}\"/" Formula/strava-cli.rb
+          sed -i "s/version \".*\"/version \"${{ steps.changelog.outputs.version }}\"/" Formula/strava-cli.rb
 
           # Update ARM SHA256 (within on_arm block)
           sed -i "/on_arm/,/end/{s/sha256 \"[a-f0-9]*\"/sha256 \"${SHA_ARM}\"/;}" Formula/strava-cli.rb
@@ -144,5 +126,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/strava-cli.rb
-          git commit -m "chore(strava-cli): update to ${{ inputs.version }}"
+          git commit -m "chore(strava-cli): update to ${{ steps.changelog.outputs.version }}"
           git push
