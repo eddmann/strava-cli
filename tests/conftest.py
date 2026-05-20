@@ -179,6 +179,16 @@ def mock_stravalib() -> Generator[MagicMock, None, None]:
         )
         mock_client.get_gear.return_value = mock_gear
 
+        # Uploads
+        mock_upload = MockModel(
+            id=777888,
+            activity_id=None,
+            status="Your activity is still being processed.",
+            error=None,
+        )
+        mock_client.upload_activity.return_value = mock_upload
+        mock_client.get_upload.return_value = mock_upload
+
         # Zones
         mock_zones = MockModel(
             heart_rate=MockModel(

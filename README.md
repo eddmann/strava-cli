@@ -187,7 +187,7 @@ strava gear get <GEAR_ID>   # e.g., b12345678 for bikes, g12345678 for shoes
 ### Upload
 
 ```bash
-strava upload <FILE> [--data-type fit|gpx|tcx] [--name NAME] [--wait]
+strava upload [--data-type fit|gpx|tcx] [--activity-type TYPE] [--name NAME] [--wait] <FILE>
 strava upload status <UPLOAD_ID>
 ```
 

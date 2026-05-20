@@ -40,9 +40,13 @@ def upload_file(
         str | None,
         typer.Option("--description", "-d", help="Activity description"),
     ] = None,
-    sport_type: Annotated[
+    activity_type: Annotated[
         str | None,
-        typer.Option("--sport-type", "-s", help="Sport type override"),
+        typer.Option(
+            "--activity-type",
+            "-s",
+            help="Activity type override",
+        ),
     ] = None,
     trainer: Annotated[
         bool,
@@ -117,7 +121,7 @@ def upload_file(
         data_type=data_type,
         name=name,
         description=description,
-        sport_type=sport_type,
+        activity_type=activity_type,
         trainer=trainer,
         commute=commute,
         external_id=external_id,

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Make auth commands honor `--config` and `--profile`
+- Use Strava's `activity_type` upload parameter for activity type overrides
 
 ## [0.1.1] - 2026-01-20
 

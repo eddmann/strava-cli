@@ -390,6 +390,38 @@ class TestGear:
         assert data["name"] == "Road Bike"
 
 
+class TestUpload:
+    """Tests for upload commands."""
+
+    def test_upload_passes_activity_type_to_stravalib(
+        self,
+        cli_runner: CliRunner,
+        authenticated_config: Path,
+        mock_stravalib: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """upload uses stravalib's activity_type keyword."""
+        activity_file = tmp_path / "activity.gpx"
+        activity_file.write_text("<gpx></gpx>")
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "upload",
+                "--data-type",
+                "gpx",
+                "--activity-type",
+                "Run",
+                str(activity_file),
+            ],
+        )
+
+        assert result.exit_code == 0
+        kwargs = mock_stravalib.upload_activity.call_args.kwargs
+        assert kwargs["activity_type"] == "Run"
+        assert "sport_type" not in kwargs
+
+
 class TestContext:
     """Tests for context command (LLM aggregation)."""
 
