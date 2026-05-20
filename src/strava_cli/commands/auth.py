@@ -15,6 +15,20 @@ from strava_cli.output import OutputFormat, output
 app = typer.Typer(no_args_is_help=True)
 
 
+def _load_config() -> Config:
+    """Load config using global CLI state."""
+    from strava_cli import cli
+
+    return Config.load(cli.state.config_path)
+
+
+def _profile_name() -> str | None:
+    """Get the selected global profile."""
+    from strava_cli import cli
+
+    return cli.state.profile
+
+
 @app.command("login")
 def login(
     scopes: Annotated[
@@ -22,7 +36,7 @@ def login(
         typer.Option(
             "--scopes",
             "-s",
-            help="Comma-separated OAuth scopes (default: read,read_all,activity:read,...)",
+            help="Comma-separated OAuth scopes (default includes profile/activity read and write)",
         ),
     ] = None,
     port: Annotated[
@@ -39,19 +53,20 @@ def login(
     and STRAVA_CLIENT_SECRET environment variables.
     """
     scope_list = scopes.split(",") if scopes else None
+    config = _load_config()
 
-    result = auth_helpers.interactive_login(scopes=scope_list, port=port)
+    result = auth_helpers.interactive_login(scopes=scope_list, port=port, config=config)
 
     if result is None:
         raise typer.Exit(2)
 
     # Save to config
-    config = Config.load()
-    config.auth.access_token = result.access_token
-    config.auth.refresh_token = result.refresh_token
-    config.auth.expires_at = result.expires_at
-    config.auth.athlete_id = result.athlete_id
-    config.auth.scopes = result.scopes
+    auth = config.ensure_profile(_profile_name())
+    auth.access_token = result.access_token
+    auth.refresh_token = result.refresh_token
+    auth.expires_at = result.expires_at
+    auth.athlete_id = result.athlete_id
+    auth.scopes = result.scopes
     config.save()
 
     # Output result
@@ -59,7 +74,7 @@ def login(
         "athlete_id": result.athlete_id,
         "expires_at": result.expires_at,
         "scopes": result.scopes,
-        "config_path": str(get_config_path()),
+        "config_path": str(config.path or get_config_path()),
     }
     emit_result(output_data, f"Logged in as athlete {result.athlete_id}")
 
@@ -79,13 +94,15 @@ def logout(
 
     Use --revoke to also invalidate the token on Strava's servers.
     """
-    config = Config.load()
+    config = _load_config()
+    profile = _profile_name()
+    auth = config.get_profile(profile)
 
     revoked = None
-    if revoke and config.auth.access_token:
-        revoked = auth_helpers.deauthorize(config.auth.access_token)
+    if revoke and auth.access_token:
+        revoked = auth_helpers.deauthorize(auth.access_token)
 
-    config.clear_auth()
+    config.clear_auth(profile)
     config.save()
 
     if revoke:
@@ -106,19 +123,20 @@ def status(
     ] = OutputFormat.json,
 ) -> None:
     """Show current authentication status."""
-    config = Config.load()
+    config = _load_config()
+    auth = config.get_profile(_profile_name())
 
     data = {
-        "authenticated": config.auth.is_authenticated(),
-        "athlete_id": config.auth.athlete_id,
-        "expires_at": config.auth.expires_at,
-        "expired": config.auth.is_expired() if config.auth.is_authenticated() else None,
-        "scopes": config.auth.scopes,
-        "config_path": str(get_config_path()),
+        "authenticated": auth.is_authenticated(),
+        "athlete_id": auth.athlete_id,
+        "expires_at": auth.expires_at,
+        "expired": auth.is_expired() if auth.is_authenticated() else None,
+        "scopes": auth.scopes,
+        "config_path": str(config.path or get_config_path()),
     }
 
     # Check if credentials are configured
-    client_id, client_secret = get_client_credentials()
+    client_id, client_secret = get_client_credentials(config)
     data["client_configured"] = bool(client_id and client_secret)
 
     output(data, format=format)
@@ -130,13 +148,14 @@ def refresh() -> None:
 
     Requires STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET environment variables.
     """
-    config = Config.load()
+    config = _load_config()
+    auth = config.get_profile(_profile_name())
 
-    if not config.auth.refresh_token:
+    if not auth.refresh_token:
         print("error: No refresh token available. Run 'strava auth login' first.", file=sys.stderr)
         raise typer.Exit(2)
 
-    client_id, client_secret = get_client_credentials()
+    client_id, client_secret = get_client_credentials(config)
     if not client_id or not client_secret:
         print(
             "error: STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET environment variables required",
@@ -148,13 +167,13 @@ def refresh() -> None:
         result = auth_helpers.refresh_access_token(
             client_id,
             client_secret,
-            config.auth.refresh_token,
+            auth.refresh_token,
         )
 
         # Update config
-        config.auth.access_token = result.access_token
-        config.auth.refresh_token = result.refresh_token
-        config.auth.expires_at = result.expires_at
+        auth.access_token = result.access_token
+        auth.refresh_token = result.refresh_token
+        auth.expires_at = result.expires_at
         config.save()
 
         emit_result(

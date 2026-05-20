@@ -6,7 +6,7 @@ import functools
 import inspect
 import sys
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import typer
 
@@ -114,8 +114,8 @@ def with_client(func: Callable[..., R]) -> Callable[..., R]:
         # access to the original function's globals. Since __globals__ is read-only,
         # we work around this by updating the wrapper module's globals directly.
         # This is safe because the wrapper is defined in this module.
-        original_globals = func.__globals__
-        wrapper_globals = wrapper.__globals__
+        original_globals = cast(Any, func).__globals__
+        wrapper_globals = cast(Any, wrapper).__globals__
         for name in ["Annotated", "typer"]:
             if name in original_globals and name not in wrapper_globals:
                 wrapper_globals[name] = original_globals[name]
@@ -200,8 +200,8 @@ def authenticated_command(func: Callable[..., Any]) -> Callable[..., None]:
         new_annotations = {k: v for k, v in func.__annotations__.items() if k != first_param}
         wrapper.__annotations__ = new_annotations
 
-        original_globals = func.__globals__
-        wrapper_globals = wrapper.__globals__
+        original_globals = cast(Any, func).__globals__
+        wrapper_globals = cast(Any, wrapper).__globals__
         for name in ["Annotated", "typer"]:
             if name in original_globals and name not in wrapper_globals:
                 wrapper_globals[name] = original_globals[name]

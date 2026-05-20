@@ -67,16 +67,19 @@ class Config:
     profiles: dict[str, AuthConfig] = field(default_factory=dict)
     client_id: str | None = None
     client_secret: str | None = None
+    path: Path | None = field(default=None, repr=False, compare=False)
 
     @classmethod
-    def load(cls, path: Path | None = None) -> Config:
+    def load(cls, path: str | Path | None = None) -> Config:
         """Load configuration from file and environment variables."""
         config = cls()
 
         # Load from file if it exists
-        config_path = path or get_config_path()
+        config_path = Path(path) if path is not None else get_config_path()
+        config.path = config_path
         if config_path.exists():
             config = cls._load_from_file(config_path)
+            config.path = config_path
 
         # Environment variable overrides
         config._apply_env_overrides()
@@ -133,9 +136,9 @@ class Config:
         if refresh := os.environ.get("STRAVA_REFRESH_TOKEN"):
             self.auth.refresh_token = refresh
 
-    def save(self, path: Path | None = None) -> None:
+    def save(self, path: str | Path | None = None) -> None:
         """Save configuration to TOML file."""
-        config_path = path or get_config_path()
+        config_path = Path(path) if path is not None else self.path or get_config_path()
         config_path.parent.mkdir(parents=True, exist_ok=True)
         # Set directory permissions to owner-only (0o700) for security
         config_path.parent.chmod(stat.S_IRWXU)
@@ -184,11 +187,15 @@ class Config:
                 lines.append(f"expires_at = {profile.expires_at}")
             if profile.athlete_id:
                 lines.append(f"athlete_id = {profile.athlete_id}")
+            if profile.scopes:
+                scopes_str = ", ".join(f'"{s}"' for s in profile.scopes)
+                lines.append(f"scopes = [{scopes_str}]")
             lines.append("")
 
         config_path.write_text("\n".join(lines))
         # Set file permissions to owner read/write only (0o600) since it contains tokens
         config_path.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        self.path = config_path
 
     def get_profile(self, name: str | None) -> AuthConfig:
         """Get auth config for a profile, or default auth."""
@@ -196,9 +203,15 @@ class Config:
             return self.profiles[name]
         return self.auth
 
+    def ensure_profile(self, name: str | None) -> AuthConfig:
+        """Get or create auth config for a profile, or default auth."""
+        if name:
+            return self.profiles.setdefault(name, AuthConfig())
+        return self.auth
+
     def clear_auth(self, profile: str | None = None) -> None:
         """Clear authentication data."""
-        if profile and profile in self.profiles:
+        if profile:
             self.profiles[profile] = AuthConfig()
         else:
             self.auth = AuthConfig()

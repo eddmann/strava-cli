@@ -1,45 +1,78 @@
+.PHONY: *
 .DEFAULT_GOAL := help
 
-.PHONY: *
+SHELL := /bin/bash
+VERSION := $(shell grep '^version' pyproject.toml | cut -d '"' -f 2)
 
-help: ## Display this help message
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z\/_%-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+##@ Setup
 
-##@ Development
+deps: ## Install dependencies
+	@uv sync
 
-install: ## Install package in development mode
-	uv sync --all-extras
+deps/prod: ## Install production dependencies only
+	@uv sync --no-dev
 
-run: ## Run a strava command (CMD="activities list")
-	uv run strava $(CMD)
+install: deps
+
+update: ## Update all dependencies to latest versions
+	@uv lock --upgrade
+	@uv sync
+
+lock: ## Regenerate lock file from scratch
+	@rm -f uv.lock
+	@uv lock
+
+clean: ## Clean up cache files and build artifacts
+	@rm -rf .pytest_cache/ .ruff_cache/ .mypy_cache/ .pyright/
+	@find . -type d -name __pycache__ -exec rm -rf {} +
+	@find . -type f -name "*.pyc" -delete
+	@rm -rf dist/ build/ *.egg-info/
 
 ##@ Testing/Linting
 
-can-release: lint test ## Run all CI checks (lint + test)
+can-release: lint test ## Run all the same checks as CI to ensure code can be released
 
-lint: ## Run ruff linter and format check
-	uv run ruff check src tests
-	uv run ruff format --check src tests
+test: ## Run the test suite
+	@uv run python -m pytest
 
-fmt: ## Format code with ruff
-	uv run ruff format src tests
-	uv run ruff check --fix src tests
+test/%: ## Run a single test path (e.g., make test/test_cli.py::test_name)
+	@uv run python -m pytest tests/$* -v
 
-test: ## Run all tests
-	uv run pytest
+test/verbose: ## Run tests with verbose output
+	@uv run python -m pytest -v
 
-test/%: ## Run a single test (e.g., make test/test_cli.py::test_name)
-	uv run pytest tests/$* -v
+test/coverage: ## Run tests with coverage report
+	@uv run python -m pytest --cov=src/strava_cli --cov-report=term-missing
 
-##@ Build/Release
+lint: lint/ruff lint/pyright ## Run all linting tools
+
+lint/ruff: ## Run ruff linter
+	@uv run ruff check
+	@uv run ruff format --check
+
+lint/pyright: ## Run pyright type checker
+	@uv run python -m pyright
+
+fmt: format
+format: ## Fix style violations and format code
+	@uv run ruff check --fix
+	@uv run ruff format
+
+##@ Packaging
 
 set-version: ## Set version (VERSION=x.x.x)
-	sed -i.bak 's/version = "[^"]*"/version = "$(VERSION)"/' pyproject.toml
-	sed -i.bak 's/__version__ = "[^"]*"/__version__ = "$(VERSION)"/' src/strava_cli/__init__.py
-	rm -f pyproject.toml.bak src/strava_cli/__init__.py.bak
+	@sed -i.bak 's/^version = "[^"]*"/version = "$(VERSION)"/' pyproject.toml
+	@sed -i.bak 's/__version__ = "[^"]*"/__version__ = "$(VERSION)"/' src/strava_cli/__init__.py
+	@rm -f pyproject.toml.bak src/strava_cli/__init__.py.bak
 
-build: ## Build standalone binary
-	uv run pyinstaller \
+build: clean ## Build source and wheel distributions
+	@uv build
+
+package/check: build ## Validate built distributions
+	@uvx twine check dist/*
+
+binary: clean ## Build standalone binary
+	@uv run pyinstaller \
 		--onefile \
 		--name strava \
 		--distpath dist \
@@ -47,15 +80,31 @@ build: ## Build standalone binary
 		--workpath build/work \
 		src/strava_cli/cli.py
 
-dist: ## Build wheel/sdist for PyPI
-	uv build
+##@ Development
 
-clean: ## Clean build artifacts
-	rm -rf dist/ build/ *.egg-info/ .pytest_cache/ .ruff_cache/
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+auth: ## Run the Strava authentication setup
+	@uv run strava auth login
 
-##@ Utilities
+run: ## Run a strava command (CMD="activities list")
+	@uv run strava $(CMD)
 
-check-version: ## Show current version
-	@grep 'version = ' pyproject.toml | head -1
-	@uv run python -c "from strava_cli import __version__; print(f'Code version: {__version__}')"
+shell: ## Open a Python shell with the project context
+	@uv run python
+
+##@ Info
+
+version: ## Show current version
+	@echo $(VERSION)
+
+deps/list: ## Show installed dependencies
+	@uv pip list
+
+info: ## Show project information
+	@echo "Project: strava-cli"
+	@echo "Version: $(VERSION)"
+	@echo "Python: $$(python --version)"
+
+help: ## Show this help message
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_\-\/]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+t: test

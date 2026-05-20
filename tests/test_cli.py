@@ -77,6 +77,67 @@ class TestAuth:
         data = json.loads(result.stdout)
         assert data["authenticated"] is False
 
+    def test_status_uses_config_option(
+        self,
+        cli_runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """auth status honors the global --config option."""
+        config_file = tmp_path / "custom-config.toml"
+        config_file.write_text("""[auth]
+access_token = "custom_access_token"
+refresh_token = "custom_refresh_token"
+expires_at = 9999999999
+athlete_id = 54321
+scopes = ["read"]
+
+[defaults]
+format = "json"
+limit = 30
+""")
+
+        result = cli_runner.invoke(app, ["--config", str(config_file), "auth", "status"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.stdout)
+        assert data["authenticated"] is True
+        assert data["athlete_id"] == 54321
+        assert data["config_path"] == str(config_file)
+
+    def test_logout_uses_profile_option(
+        self,
+        cli_runner: CliRunner,
+        tmp_config_dir: Path,
+    ) -> None:
+        """auth logout honors the global --profile option."""
+        config_file = tmp_config_dir / "config.toml"
+        config_file.write_text("""[auth]
+access_token = "default_access_token"
+refresh_token = "default_refresh_token"
+expires_at = 9999999999
+athlete_id = 12345
+scopes = ["read"]
+
+[defaults]
+format = "json"
+limit = 30
+
+[profiles.work]
+access_token = "work_access_token"
+refresh_token = "work_refresh_token"
+expires_at = 9999999999
+athlete_id = 67890
+scopes = ["read"]
+""")
+
+        result = cli_runner.invoke(app, ["--profile", "work", "auth", "logout"])
+        default_status = cli_runner.invoke(app, ["auth", "status"])
+        work_status = cli_runner.invoke(app, ["--profile", "work", "auth", "status"])
+
+        assert result.exit_code == 0
+        assert json.loads(default_status.stdout)["authenticated"] is True
+        assert json.loads(work_status.stdout)["authenticated"] is False
+
     def test_logout_clears_tokens(
         self,
         cli_runner: CliRunner,

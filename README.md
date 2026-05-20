@@ -4,6 +4,9 @@
 
 Strava from your terminal. Pipe it, script it, automate it.
 
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/pypi/v/strava-terminal.svg)](https://pypi.org/project/strava-terminal/)
+
 > Exploring CLI tools as skills for AI agents. [Background below](#background).
 
 ## Features
@@ -29,20 +32,23 @@ Downloads the pre-built binary for your platform (macOS/Linux) to `~/.local/bin`
 brew install eddmann/tap/strava-cli
 ```
 
-### Using uv/pipx
+### Using uv
 
 Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv tool install git+https://github.com/eddmann/strava-cli.git
+uvx strava-terminal --help
+uv tool install strava-terminal
 ```
+
+The PyPI package is `strava-terminal` for `uvx`/`uv tool` usage; the project remains Strava CLI and the primary command remains `strava`.
 
 ### From Source
 
 ```bash
 git clone https://github.com/eddmann/strava-cli
 cd strava-cli
-uv sync
+make deps
 uv run strava --help
 ```
 
@@ -103,6 +109,8 @@ strava context --no-clubs           # Exclude clubs
 ```
 
 ### Authentication
+
+By default, the OAuth flow requests the scopes needed to read profile and activity data, star or unstar segments, and create, update, upload, or delete activities.
 
 ```bash
 strava auth login          # OAuth browser flow
@@ -210,7 +218,7 @@ access_token = "..."
 refresh_token = "..."
 expires_at = 1234567890
 athlete_id = 12345
-scopes = ["read", "activity:read_all", "activity:write"]
+scopes = ["read", "profile:read_all", "profile:write", "activity:read_all", "activity:write"]
 
 [defaults]
 format = "json"
@@ -251,7 +259,7 @@ Installs the skill to `~/.claude/skills/strava/` and `~/.cursor/skills/strava/`.
 ```bash
 git clone https://github.com/eddmann/strava-cli
 cd strava-cli
-make install                          # Install dependencies
+make deps                             # Install dependencies
 make test                             # Run tests
 make run CMD="activities list --limit 5"  # Run command
 ```

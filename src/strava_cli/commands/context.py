@@ -103,9 +103,10 @@ def context(
     # Include stats
     if focus_areas is None or "stats" in focus_areas:
         try:
-            stats = client.get_athlete_stats(athlete.id)
-            stats_data = serialize_object(stats)
-            result["stats"] = stats_data
+            athlete_id = athlete_data.get("id")
+            result["stats"] = (
+                serialize_object(client.get_athlete_stats(athlete_id)) if athlete_id else None
+            )
         except Exception:
             result["stats"] = None
 

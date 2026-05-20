@@ -23,6 +23,7 @@ DEFAULT_SCOPES = [
     "read",
     "read_all",
     "profile:read_all",
+    "profile:write",
     "activity:read",
     "activity:read_all",
     "activity:write",
@@ -225,6 +226,7 @@ def prompt_for_credentials() -> tuple[str, str] | None:
 def interactive_login(
     scopes: list[str] | None = None,
     port: int = 8000,
+    config: Config | None = None,
 ) -> AuthResult | None:
     """Perform interactive OAuth login flow.
 
@@ -237,7 +239,8 @@ def interactive_login(
     Returns:
         AuthResult if successful, None otherwise
     """
-    config = Config.load()
+    if config is None:
+        config = Config.load()
     client_id, client_secret = get_client_credentials(config)
 
     if not client_id or not client_secret:
@@ -250,7 +253,7 @@ def interactive_login(
         config.client_id = client_id
         config.client_secret = client_secret
         config.save()
-        print(f"\nCredentials saved to {get_config_path()}", file=sys.stderr)
+        print(f"\nCredentials saved to {config.path or get_config_path()}", file=sys.stderr)
 
     redirect_uri = f"http://localhost:{port}/callback"
     state = secrets.token_urlsafe(16)

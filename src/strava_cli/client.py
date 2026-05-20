@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from stravalib import Client
 from stravalib.exc import AccessUnauthorized, RateLimitExceeded
 
@@ -37,6 +39,11 @@ class StravaClient:
             if self.auth.access_token:
                 self._client.access_token = self.auth.access_token
         return self._client
+
+    @property
+    def _api(self) -> Any:
+        """Access stravalib methods missing from its published type hints."""
+        return cast(Any, self.client)
 
     def is_authenticated(self) -> bool:
         """Check if we have valid authentication."""
@@ -190,7 +197,7 @@ class StravaClient:
     ):
         """Update an activity."""
         self.ensure_authenticated()
-        return self.client.update_activity(
+        return self._api.update_activity(
             activity_id=activity_id,
             name=name,
             sport_type=sport_type,
@@ -203,7 +210,7 @@ class StravaClient:
     def delete_activity(self, activity_id: int) -> None:
         """Delete an activity."""
         self.ensure_authenticated()
-        self.client.delete_activity(activity_id)
+        self._api.delete_activity(activity_id)
 
     def get_activity_streams(
         self,
@@ -277,7 +284,7 @@ class StravaClient:
     def star_segment(self, segment_id: int, starred: bool = True):
         """Star or unstar a segment."""
         self.ensure_authenticated()
-        return self.client.star_segment(segment_id, starred=starred)
+        return self._api.star_segment(segment_id, starred=starred)
 
     def explore_segments(
         self,
@@ -371,7 +378,7 @@ class StravaClient:
         """Upload an activity file."""
         self.ensure_authenticated()
         with open(file_path, "rb") as f:
-            return self.client.upload_activity(
+            return self._api.upload_activity(
                 activity_file=f,
                 data_type=data_type,
                 name=name,
@@ -385,7 +392,7 @@ class StravaClient:
     def get_upload(self, upload_id: int):
         """Get upload status."""
         self.ensure_authenticated()
-        return self.client.get_upload(upload_id)
+        return self._api.get_upload(upload_id)
 
 
 def get_client(config: Config | None = None, profile: str | None = None) -> StravaClient:

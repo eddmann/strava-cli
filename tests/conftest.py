@@ -36,7 +36,7 @@ access_token = "test_access_token_12345"
 refresh_token = "test_refresh_token_67890"
 expires_at = 9999999999
 athlete_id = 12345
-scopes = ["read", "activity:read", "activity:write"]
+scopes = ["read", "profile:read_all", "profile:write", "activity:read", "activity:write"]
 
 [defaults]
 format = "json"
@@ -214,7 +214,7 @@ def mock_httpx_oauth() -> Generator[MagicMock, None, None]:
             "refresh_token": "new_refresh_token",
             "expires_at": int(time.time()) + 21600,  # 6 hours from now
             "athlete": {"id": 12345},
-            "scope": "read,activity:read,activity:write",
+            "scope": "read,profile:read_all,profile:write,activity:read,activity:write",
         }
         mock_response.raise_for_status = MagicMock()
         mock_httpx.post.return_value = mock_response
