@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from typer.testing import CliRunner
 
 from strava_cli import __version__
@@ -420,6 +421,67 @@ class TestUpload:
         kwargs = mock_stravalib.upload_activity.call_args.kwargs
         assert kwargs["activity_type"] == "Run"
         assert "sport_type" not in kwargs
+
+    def test_upload_uses_upload_id_from_stravalib_response(
+        self,
+        cli_runner: CliRunner,
+        authenticated_config: Path,
+        mock_stravalib: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """upload reports the identifier exposed by stravalib."""
+        activity_file = tmp_path / "activity.gpx"
+        activity_file.write_text("<gpx></gpx>")
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "--format",
+                "human",
+                "upload",
+                "--data-type",
+                "gpx",
+                str(activity_file),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert result.stdout == "Upload started: ID 777888\n"
+
+    def test_upload_wait_polls_upload_id_from_stravalib_response(
+        self,
+        cli_runner: CliRunner,
+        authenticated_config: Path,
+        mock_stravalib: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """upload --wait polls using the identifier exposed by stravalib."""
+        monkeypatch.setattr("strava_cli.commands.upload.time.sleep", lambda _: None)
+        mock_stravalib.protocol.get.return_value = {
+            "id": 777888,
+            "activity_id": 999000,
+            "status": "Your activity is ready.",
+            "error": None,
+        }
+        activity_file = tmp_path / "activity.gpx"
+        activity_file.write_text("<gpx></gpx>")
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "--format",
+                "human",
+                "upload",
+                "--wait",
+                "--data-type",
+                "gpx",
+                str(activity_file),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert result.stdout == "Upload complete: activity 999000\n"
 
 
 class TestContext:

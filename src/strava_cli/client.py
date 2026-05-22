@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from stravalib import Client
+from stravalib.client import ActivityUploader
 from stravalib.exc import AccessUnauthorized, RateLimitExceeded
 
 from strava_cli.config import Config, get_client_credentials
@@ -392,7 +393,12 @@ class StravaClient:
     def get_upload(self, upload_id: int):
         """Get upload status."""
         self.ensure_authenticated()
-        return self._api.get_upload(upload_id)
+        response = self.client.protocol.get(
+            "/uploads/{upload_id}",
+            upload_id=upload_id,
+            check_for_errors=False,
+        )
+        return ActivityUploader(self.client, response=response, raise_exc=False)
 
 
 def get_client(config: Config | None = None, profile: str | None = None) -> StravaClient:

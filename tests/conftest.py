@@ -181,13 +181,18 @@ def mock_stravalib() -> Generator[MagicMock, None, None]:
 
         # Uploads
         mock_upload = MockModel(
-            id=777888,
+            upload_id=777888,
             activity_id=None,
             status="Your activity is still being processed.",
             error=None,
         )
         mock_client.upload_activity.return_value = mock_upload
-        mock_client.get_upload.return_value = mock_upload
+        mock_client.protocol.get.return_value = {
+            "id": 777888,
+            "activity_id": None,
+            "status": "Your activity is still being processed.",
+            "error": None,
+        }
 
         # Zones
         mock_zones = MockModel(

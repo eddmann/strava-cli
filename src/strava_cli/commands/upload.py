@@ -133,7 +133,7 @@ def upload_file(
         max_attempts = 60
         for _ in range(max_attempts):
             time.sleep(1)
-            status = client.get_upload(upload_result.id)
+            status = client.get_upload(upload_result.upload_id)
             if hasattr(status, "activity_id") and status.activity_id:
                 emit_result(status, f"Upload complete: activity {status.activity_id}")
                 return
@@ -144,7 +144,7 @@ def upload_file(
         print("error: Upload processing timeout", file=sys.stderr)
         raise typer.Exit(1)
     else:
-        emit_result(upload_result, f"Upload started: ID {upload_result.id}")
+        emit_result(upload_result, f"Upload started: ID {upload_result.upload_id}")
 
 
 @app.command("status")
