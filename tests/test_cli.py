@@ -178,6 +178,29 @@ scopes = ["read"]
         data = json.loads(result.stdout)
         assert "expires_at" in data
 
+    def test_login_port_in_use_fails_gracefully(
+        self,
+        cli_runner: CliRunner,
+        unauthenticated_config: Path,
+        env_credentials: None,
+    ) -> None:
+        """auth login reports a friendly error instead of a traceback when the port is busy."""
+        import socket
+
+        occupied = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        occupied.bind(("localhost", 0))
+        occupied.listen(1)
+        port = occupied.getsockname()[1]
+        try:
+            result = cli_runner.invoke(app, ["auth", "login", "--port", str(port)])
+        finally:
+            occupied.close()
+
+        assert result.exit_code == 2
+        assert "Traceback" not in result.stderr
+        assert f"port {port}" in result.stderr
+        assert "--port" in result.stderr
+
 
 class TestActivities:
     """Tests for activity commands."""

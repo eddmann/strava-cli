@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import httpx
 
 from strava_cli.config import Config, get_client_credentials, get_config_path
+from strava_cli.exceptions import CallbackServerError
 
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
@@ -94,7 +95,10 @@ def start_callback_server(port: int = 8000) -> socketserver.TCPServer:
     OAuthCallbackHandler.state = None
     OAuthCallbackHandler.error = None
 
-    server = socketserver.TCPServer(("localhost", port), OAuthCallbackHandler)
+    try:
+        server = socketserver.TCPServer(("localhost", port), OAuthCallbackHandler)
+    except OSError as e:
+        raise CallbackServerError(port, e.strerror or str(e)) from e
     server.timeout = 120  # 2 minute timeout
 
     return server
