@@ -45,9 +45,22 @@ The PyPI package is `strava-terminal` for `uvx`/`uv tool` usage; the project rem
 
 ### From Source
 
+Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
+
+Install the `strava` executable onto your PATH directly from a local checkout:
+
 ```bash
 git clone https://github.com/eddmann/strava-cli
 cd strava-cli
+uv tool install .
+strava --help
+```
+
+This builds the package from source and installs the `strava` command to `~/.local/bin`. Re-run `uv tool install . --force` to update after pulling changes, and `uv tool uninstall strava-terminal` to remove it.
+
+Alternatively, to run from the project without installing (useful for development):
+
+```bash
 make deps
 uv run strava --help
 ```
