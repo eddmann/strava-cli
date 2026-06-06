@@ -52,10 +52,19 @@ def login(
     Opens a browser window for authorization. Requires STRAVA_CLIENT_ID
     and STRAVA_CLIENT_SECRET environment variables.
     """
+    from strava_cli import cli
+    from strava_cli.exceptions import StravaCLIError
+
     scope_list = scopes.split(",") if scopes else None
     config = _load_config()
 
-    result = auth_helpers.interactive_login(scopes=scope_list, port=port, config=config)
+    try:
+        result = auth_helpers.interactive_login(scopes=scope_list, port=port, config=config)
+    except StravaCLIError as e:
+        print(f"error: {e.message}", file=sys.stderr)
+        if e.hint and not cli.state.quiet:
+            print(f"hint: {e.hint}", file=sys.stderr)
+        raise typer.Exit(e.exit_code) from None
 
     if result is None:
         raise typer.Exit(2)

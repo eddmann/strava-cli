@@ -82,6 +82,25 @@ class MissingCredentialsError(ConfigurationError):
         )
 
 
+class CallbackServerError(StravaCLIError):
+    """Local OAuth callback server could not be started.
+
+    Exit code: 2 (user must free the port or pick another to proceed)
+    """
+
+    exit_code = 2
+
+    def __init__(self, port: int, reason: str) -> None:
+        super().__init__(
+            f"Could not start local callback server on port {port}: {reason}",
+            hint=(
+                f"Port {port} may already be in use. "
+                f"Pick a free one with --port, e.g. 'strava auth login --port 8421'."
+            ),
+        )
+        self.port = port
+
+
 class RateLimitError(StravaCLIError):
     """Strava API rate limit exceeded.
 
