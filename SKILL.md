@@ -9,7 +9,7 @@ Query and manage Strava data via the `strava` CLI.
 
 ## Prerequisites
 
-- Install CLI: `curl -fsSL https://raw.githubusercontent.com/eddmann/strava-cli/main/install.sh | sh`
+- Install CLI: `curl -fsSL https://raw.githubusercontent.com/eddmann/strava-cli/main/install.sh -o install.sh && bash install.sh`
 - Authenticate: `strava auth login` (requires `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`)
 
 ## Quick Context
